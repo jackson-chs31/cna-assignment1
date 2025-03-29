@@ -4,6 +4,7 @@ import sys
 import os
 import argparse
 import re
+import time
 
 # 1MB buffer size
 BUFFER_SIZE = 1000000
@@ -114,6 +115,19 @@ while True:
     cacheFile = open(cacheLocation, "r")
     cacheData = cacheFile.readlines()
 
+
+    # Check weather the cached file is still valid (alive)
+    cacheString = ''.join(cacheData)
+    cache_control_match = re.search(r'Cache-Control:.*?max-age=(\d+)', cacheString, re.IGNORECASE)
+    max_age = int(cache_control_match.group(1)) if cache_control_match else None
+    modified_time = os.path.getmtime(cacheLocation) # when caching file is created (modified)
+    age = time.time() - modified_time # its curre age
+    print(f"Found Cache File Age: {int(age)} seconds")
+    if age > max_age:
+      print("Outdated Caching!!!!!")
+      raise Exception("Outdated Caching")
+
+
     print ('Cache hit! Loading from cache file: ' + cacheLocation)
     # ProxyServer finds a cache hit
     # Send back response to client 
@@ -123,8 +137,11 @@ while True:
     # ~~~~ END CODE INSERT ~~~~
     cacheFile.close()
     print ('Sent to the client:')
-    print ('> ' + cacheData)
+
+    # update to print concated str to avoid error (go to except...)
+    print ('> ' + cacheString)
   except:
+    print('Cache Miss!!!!!')
     # cache miss.  Get resource from origin server
     originServerSocket = None
     # Create a socket to connect to origin server
