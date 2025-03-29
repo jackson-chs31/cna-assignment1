@@ -180,19 +180,29 @@ while True:
       clientSocket.sendall(originServerResp) # just repost what we get from original server back to client
       # ~~~~ END CODE INSERT ~~~~
 
-      # Create a new file in the cache for the requested file.
-      cacheDir, file = os.path.split(cacheLocation)
-      print ('cached directory ' + cacheDir)
-      if not os.path.exists(cacheDir):
-        os.makedirs(cacheDir)
-      cacheFile = open(cacheLocation, 'wb')
+      # determine if we have to cache or MUST NOT
+      response_string = originServerResp.decode('ISO-8859-1')
+      # print(response_string)
+      is_no_store = re.search(r'Cache-Control:\s*no-store', response_string, re.IGNORECASE) # MUST NOT cache with - no store
 
-      # Save origin server response in the cache file
-      # ~~~~ INSERT CODE ~~~~
-      cacheFile.write(originServerResp)
-      # ~~~~ END CODE INSERT ~~~~
-      cacheFile.close()
-      print ('cache file closed')
+      # default cache:
+
+      if is_no_store is not None:
+          print("start caching...")
+          # Create a new file in the cache for the requested file.
+          cacheDir, file = os.path.split(cacheLocation)
+          print ('cached directory ' + cacheDir)
+          if not os.path.exists(cacheDir):
+            os.makedirs(cacheDir)
+          cacheFile = open(cacheLocation, 'wb')
+
+          # Save origin server response in the cache file
+          # ~~~~ INSERT CODE ~~~~
+          cacheFile.write(originServerResp)
+
+          # ~~~~ END CODE INSERT ~~~~
+          cacheFile.close()
+          print ('cache file closed')
 
       # finished communicating with origin server - shutdown socket writes
       print ('origin response received. Closing sockets')
